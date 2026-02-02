@@ -27,7 +27,36 @@ import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
 
-    // --- 1. CONTACT PICKER LAUNCHER ---
+    // --- 1. CROPPER LAUNCHER ---
+    // Receives the FINAL cropped image from your custom CropActivity
+    private val cropActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val croppedUri = result.data?.data
+            if (croppedUri != null) {
+                // Show it
+                findViewById<android.widget.ImageView>(R.id.ivPreview).setImageURI(croppedUri)
+                // Save it locally
+                saveImageToInternalStorage(croppedUri)
+            }
+        }
+    }
+
+    // --- 2. CLASSIC GALLERY LAUNCHER (Re-implemented) ---
+    // Receives the raw image from the Gallery, then immediately sends it to CropActivity
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val originalUri = result.data?.data
+            if (originalUri != null) {
+                // Immediately launch CropActivity with this image
+                val intent = Intent(this, CropActivity::class.java)
+                intent.data = originalUri
+                intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                cropActivityLauncher.launch(intent)
+            }
+        }
+    }
+
+    // --- 3. CONTACT PICKER LAUNCHER ---
     private val pickContactLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             val contactUri = result.data?.data ?: return@registerForActivityResult
@@ -35,22 +64,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- 2. PERMISSION LAUNCHER ---
     private val requestContactPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted) {
             launchContactPicker()
         } else {
-            Toast.makeText(this, "Permission denied. Cannot pick contact.", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val uri = result.data?.data
-            if (uri != null) {
-                findViewById<android.widget.ImageView>(R.id.ivPreview).setImageURI(uri)
-                saveImageToInternalStorage(uri)
-            }
+            Toast.makeText(this, "Permission denied.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -58,29 +76,26 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        checkPermissions() // Standard permissions (Notif, Overlay, Alarm)
+        checkPermissions()
 
-        // Setup UI
         val ivPreview = findViewById<android.widget.ImageView>(R.id.ivPreview)
-        val btnPickContact = findViewById<ImageButton>(R.id.btnPickContact) // <--- NEW BUTTON
+        val btnPickContact = findViewById<ImageButton>(R.id.btnPickContact)
         val btnSchedule = findViewById<Button>(R.id.btnSchedule)
         val npDelay = findViewById<NumberPicker>(R.id.npDelay)
 
-        // Setup Spinner
         npDelay.minValue = 0
         npDelay.maxValue = 120
         npDelay.value = 10
         npDelay.wrapSelectorWheel = false
 
-        // 1. IMAGE CLICK (Manual Photo)
+        // --- 4. CLICK LISTENER: Use Standard Gallery Intent ---
         ivPreview.setOnClickListener {
+            // ACTION_PICK is the "Classic" single-select intent you wanted
             val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             pickImageLauncher.launch(intent)
         }
 
-        // 2. CONTACT BUTTON CLICK
         btnPickContact.setOnClickListener {
-            // Check if we have permission. If not, ask. If yes, open picker.
             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
                 launchContactPicker()
             } else {
@@ -88,7 +103,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 3. SCHEDULE CLICK
         btnSchedule.setOnClickListener {
             val name = findViewById<EditText>(R.id.etCallerName).text.toString()
             val phone = findViewById<EditText>(R.id.etPhoneNumber).text.toString()
@@ -96,46 +110,37 @@ class MainActivity : AppCompatActivity() {
             scheduleCall(name, phone, delaySeconds)
         }
 
-        // Cleanup old image on start
+        // Reset image on fresh launch
         val file = File(filesDir, "custom_avatar.jpg")
         if (file.exists()) file.delete()
     }
 
     private fun launchContactPicker() {
-        // We strictly want phones, so we pick from CommonDataKinds.Phone
         val intent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
         pickContactLauncher.launch(intent)
     }
 
     private fun populateContactDetails(uri: Uri) {
-        // Query the content provider for the specific contact clicked
         val cursor: Cursor? = contentResolver.query(uri, null, null, null, null)
-
         cursor?.use {
             if (it.moveToFirst()) {
-                // 1. Get Name
                 val nameIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
                 val name = if (nameIndex >= 0) it.getString(nameIndex) else "Unknown"
-
-                // 2. Get Number
                 val numberIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
                 val number = if (numberIndex >= 0) it.getString(numberIndex) else ""
-
-                // 3. Get Photo URI (Thumbnail or High Res)
                 val photoUriIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
                 val photoUriString = if (photoUriIndex >= 0) it.getString(photoUriIndex) else null
 
-                // --- UPDATE UI ---
                 findViewById<EditText>(R.id.etCallerName).setText(name)
                 findViewById<EditText>(R.id.etPhoneNumber).setText(number)
 
-                // --- HANDLE PHOTO ---
                 if (photoUriString != null) {
                     val photoUri = photoUriString.toUri()
+                    // If from contacts, also let them crop it if they want, or just save it.
+                    // For now, let's just save it directly to keep it simple.
                     findViewById<android.widget.ImageView>(R.id.ivPreview).setImageURI(photoUri)
-                    saveImageToInternalStorage(photoUri) // Save it for the fake call later
+                    saveImageToInternalStorage(photoUri)
                 } else {
-                    // Reset to default if contact has no photo
                     findViewById<android.widget.ImageView>(R.id.ivPreview).setImageResource(R.drawable.ic_avatar_default)
                     val file = File(filesDir, "custom_avatar.jpg")
                     if (file.exists()) file.delete()
@@ -158,7 +163,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions() {
-        // ... (Keep your existing checks for Notif, Overlay, Alarm) ...
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
         }
@@ -174,7 +178,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun scheduleCall(name: String, phone: String, delaySeconds: Long) {
-        // ... (Keep your existing schedule logic exactly as it was) ...
         if (delaySeconds == 0L) {
             val intent = Intent(this, FakeCallActivity::class.java).apply {
                 putExtra("caller_name", name)
@@ -195,10 +198,16 @@ class MainActivity : AppCompatActivity() {
             putExtra("caller_name", name)
             putExtra("caller_phone", phone)
         }
-        val pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent = PendingIntent.getBroadcast(
+            this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (delaySeconds * 1000), pendingIntent)
-        Toast.makeText(this, "Call scheduled in $delaySeconds second${if (delaySeconds != 1L) "s" else ""}.", Toast.LENGTH_LONG).show()
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            System.currentTimeMillis() + (delaySeconds * 1000),
+            pendingIntent
+        )
+        Toast.makeText(this, "Call scheduled in $delaySeconds second${if (delaySeconds != 1L) "s" else ""}", Toast.LENGTH_SHORT).show()
 
     }
 }
