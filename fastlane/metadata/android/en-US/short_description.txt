@@ -1,0 +1,1 @@
+A realistic call simulation app to escape awkward situations or play pranks.

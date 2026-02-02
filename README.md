@@ -2,7 +2,7 @@
 
 |          **Settings Screen**          |                **Incoming Call**                | **Accepted Call**                               |
 |:-------------------------------------:|:-----------------------------------------------:|-------------------------------------------------|
-| ![Settings](screenshots/settings.png) | ![Incoming Call](screenshots/incoming_call.png) | ![Accepted Call](screenshots/accepted_call.png) |
+| ![Settings](fastlane/metadata/android/en-US/images/phoneScreenshots/1_settings.png) | ![Incoming Call](fastlane/metadata/android/en-US/images/phoneScreenshots/2_incoming_call.png) | ![Accepted Call](fastlane/metadata/android/en-US/images/phoneScreenshots/3_accepted_call.png) |
 
 An open-source call simulation app to escape awkward situations or play pranks.
 
