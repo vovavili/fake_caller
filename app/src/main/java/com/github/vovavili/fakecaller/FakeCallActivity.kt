@@ -1,4 +1,4 @@
-package com.example.fakecallapp
+package com.github.vovavili.fakecaller
 
 import android.media.AudioAttributes
 import android.media.MediaPlayer

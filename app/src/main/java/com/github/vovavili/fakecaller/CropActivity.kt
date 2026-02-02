@@ -1,4 +1,4 @@
-package com.example.fakecallapp
+package com.github.vovavili.fakecaller
 
 import android.app.Activity
 import android.content.Intent

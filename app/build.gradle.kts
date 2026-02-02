@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.fakecallapp"
+    namespace = "com.github.vovavili.fakecaller"
     compileSdk {
         version = release(36)
     }

@@ -1,4 +1,4 @@
-package com.example.fakecallapp
+package com.github.vovavili.fakecaller
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
