@@ -1,0 +1,15 @@
+<resources>
+<style name="Base.Theme.FakeCallApp" parent="Theme.Material3.DayNight.NoActionBar">
+</style>
+
+<style name="Theme.FakeCallApp" parent="Base.Theme.FakeCallApp" />
+
+<style name="Theme.FakeCall" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <item name="android:windowFullscreen">true</item>
+    <item name="android:windowContentOverlay">@null</item>
+    <item name="android:windowLayoutInDisplayCutoutMode" >shortEdges</item>
+
+    <item name="materialButtonStyle">@style/Widget.Material3.Button</item>
+</style>
+
+</resources>
