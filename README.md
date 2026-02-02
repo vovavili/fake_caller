@@ -10,8 +10,8 @@
 
 An open-source call simulation app to escape awkward situations or play pranks.
 
-Not only I couldn't find an open-source fake caller on the F-Droid or Google Play stores, I couldn't
-even find one that looked reasonably modern and not too obvious, worked with the screen off and wasn't run by an obvious ad farm, 
-so I decided to vibe code my own. This app will never have any ads or collect any data, forever. 
+Surprisingly, finding a usable fake caller proved impossible. There are no apps on F-Droid, while 
+apps on Google Play were visually outdated, didn't work when the screen was locked, or were simply ad farms. 
+I decided to vibe code my own alternative: a modern, open-source app that will never track you or show ads.
 
 Tested on Google Pixel 9 Pro XL. Contributions are welcome. 
