@@ -1,4 +1,8 @@
-# Fake Call App
+<div align="center">
+  <h1>Fake Call App</h1>
+
+  <img src="fastlane/metadata/android/en-US/images/icon.png" alt="Settings" width="200">
+</div>
 
 |          **Settings Screen**          |                **Incoming Call**                | **Accepted Call**                               |
 |:-------------------------------------:|:-----------------------------------------------:|-------------------------------------------------|
